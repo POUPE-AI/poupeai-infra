@@ -9,7 +9,7 @@ x-django-common-env: &django-common-env
   DATABASE_URL: postgres://${FINANCE_DB_USER}:${FINANCE_DB_PASSWORD}@finances-db:5432/${FINANCE_DB}
   KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
   KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL}
-  REDIS_URL: ${REDIS_URL}
+  REDIS_URL: ${REDIS_FINANCE_URL}
   KEYCLOAK_SERVER_URL: ${KEYCLOAK_SERVER_URL}
   KEYCLOAK_REALM_NAME: "poupe-ai"
   KEYCLOAK_ADMIN_CLIENT_ID: "poupe-ai-backend"
@@ -57,29 +57,15 @@ services:
     networks:
       - poupe-ai-network
 
-  redis-finance:
+  redis:
     image: redis:7-alpine
-    container_name: redis-finance-local
+    container_name: redis-local
     volumes:
-      - redis_finance_data:/data
+      - redis_data:/data
     networks:
       - poupe-ai-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis-notification:
-    image: redis:7-alpine
-    container_name: redis-notification-local
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis_notification_data:/data
-    networks:
-      - poupe-ai-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -190,7 +176,7 @@ services:
     depends_on:
       finances-db:
         condition: service_healthy
-      redis-finance:
+      redis:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -208,7 +194,7 @@ services:
     environment:
       <<: *django-common-env
     depends_on:
-      - redis-finance
+      - redis
       - finances-db
       - rabbitmq
     networks:
@@ -225,7 +211,7 @@ services:
     environment:
       <<: *django-common-env
     depends_on:
-      - redis-finance
+      - redis
       - finances-db
       - rabbitmq
     networks:
@@ -246,7 +232,7 @@ services:
     ports:
       - '5555:5555'
     depends_on:
-      - redis-finance
+      - redis
       - finances-db
     networks:
       - poupe-ai-network
@@ -273,9 +259,7 @@ services:
       RABBITMQ_EXCHANGE_DLQ: notification_exchange.dlq
       RABBITMQ_QUEUE_DLQ: notification_events.dlq
       RABBITMQ_RETRY_DELAY_MS: 10000
-      REDIS_HOST: redis-notification
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      REDIS_PORT: 6379
+      REDIS_URL: ${REDIS_NOTIFICATION_URL}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
@@ -285,7 +269,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      redis-notification:
+      redis:
         condition: service_healthy
     networks:
       - poupe-ai-network
@@ -349,8 +333,7 @@ services:
 volumes:
   keycloak_data:
   finances_data:
-  redis_finance_data:
-  redis_notification_data:
+  redis_data:
   rabbitmq_data:
   loki_data:
   promtail_positions:
