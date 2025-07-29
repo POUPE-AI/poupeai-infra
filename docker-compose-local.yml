@@ -120,7 +120,9 @@ services:
       - poupe-ai-network
 
   kong:
-    image: kong:3.9.1
+    build:
+      context: ./kong
+      dockerfile: Dockerfile
     container_name: kong-gateway-local
     environment:
       KONG_DATABASE: 'off'
@@ -131,16 +133,20 @@ services:
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
       KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_NGINX_DAEMON: 'off'
       KONG_PLUGINS: bundled,jwt-header-injector
       KONG_LUA_PACKAGE_PATH: /usr/local/share/lua/5.1/kong/plugins/?.lua;;
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
     ports:
       - "8000:8000"
       - "8001:8001"
       - "8002:8002"
       - "8443:8443"
     volumes:
-      - ./kong/kong.yaml:/opt/kong/kong.yaml
+      - ./kong/kong.template.yaml:/opt/kong/kong.template.yaml
       - ./kong/plugins/jwt-header-injector:/usr/local/share/lua/5.1/kong/plugins/jwt-header-injector
+    depends_on:
+      - keycloak
     healthcheck:
       test: ["CMD", "kong", "health"]
       interval: 10s

@@ -37,18 +37,10 @@ services:
 consumers:
   - username: keycloak-consumer
     jwt_secrets:
-      - key: http://localhost:8080/realms/poupe-ai
+      - key: __KEYCLOAK_ISSUER_URL__
         algorithm: RS256
         rsa_public_key: |
-          -----BEGIN PUBLIC KEY-----
-          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtkqY2KHdIYK6fHvx01Jb
-          Hh9OLOuQyiIr+W66VFvWZ9jxvHfnX8CqqZcMNNa2cmyq718I091qr/T2DW1V9ugf
-          9MCCYjmY653lgv5VcOfXRihFIc6LIO90gFMVLtqiXJVhChBL3HXix4bYwLg2Q8Wt
-          Kmp612fjUVwyjs4JPzyqeKSiqXeY7TwEwQTFyboVix0AY1W4W50RRYDVw8O+KtJ9
-          DHIcjvD67+x6505PoI1LISSp8eVB46TTwZB8YsSmfKiKBeOGVBFpENN0FEYXJR1o
-          a14raPrz9Jz/J/4DFZdHjqkB5m7qNXihu2OnkJboBmq+T7CPBEtQ9WSP5UVwtG9Q
-          twIDAQAB
-          -----END PUBLIC KEY-----
+          __KEYCLOAK_RSA_PUBLIC_KEY__
 
 plugins:
   - name: correlation-id
