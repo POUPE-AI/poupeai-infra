@@ -19,7 +19,7 @@ services:
       - name: jwt-header-injector
 
   - name: reports-service
-    url: http://reports-service:5000
+    url: http://reports-service:8081
     routes:
       - name: reports-all-routes
         paths:
