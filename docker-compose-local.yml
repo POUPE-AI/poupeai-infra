@@ -286,6 +286,16 @@ services:
     container_name: reports-service-local
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      GeminiAI__ApiKey: ${GEMINI_API_KEY}
+      DeepseekAI__ApiKey: ${DEEPSEEK_API_KEY}
+      Database__ConnectionString: ${REPORT_DB_CONNECTION_STRING}
+      Database__DatabaseName: ${REPORT_DB_NAME}
+      Keycloak__Authority: ${KEYCLOAK_AUTHORITY}
+      Keycloak__Audience: ${KEYCLOAK_AUDIENCE}
+      Keycloak__ValidIssuer: ${KEYCLOAK_ISSUER}
+      FinancesService__BaseUrl: ${FINANCES_SERVICE_BASE_URL}
+      FinancesService__TransactionsEndpoint: ${FINANCES_SERVICE_TRANSACTIONS_ENDPOINT}
+      FinancesService__CategoryEndpoint: ${FINANCES_SERVICE_CATEGORY_ENDPOINT}
     networks:
       - poupe-ai-network
 
