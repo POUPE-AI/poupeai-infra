@@ -278,6 +278,41 @@ services:
     restart: unless-stopped
     networks:
       - poupe-ai-network
+  
+  # --- BACKUPS ---
+  finances-db-backup:
+    image: prodrigestivill/postgres-backup-local:17-alpine
+    container_name: finances-db-backup-prod
+    restart: unless-stopped
+    volumes:
+      - finances_backups:/backups
+    networks:
+      - poupe-ai-network
+    environment:
+      - POSTGRES_HOST=finances-db
+      - POSTGRES_DB=${FINANCE_DB}
+      - POSTGRES_USER=${FINANCE_DB_USER}
+      - POSTGRES_PASSWORD=${FINANCE_DB_PASSWORD}
+      - POSTGRES_EXTRA_OPTS=--clean
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+
+  keycloak-db-backup:
+    image: prodrigestivill/postgres-backup-local:17-alpine
+    container_name: keycloak-db-backup-prod
+    restart: unless-stopped
+    volumes:
+      - keycloak_backups:/backups
+    networks:
+      - poupe-ai-network
+    environment:
+      - POSTGRES_HOST=keycloak-db
+      - POSTGRES_DB=${KEYCLOAK_DB}
+      - POSTGRES_USER=${KEYCLOAK_DB_USER}
+      - POSTGRES_PASSWORD=${KEYCLOAK_DB_PASSWORD}
+      - POSTGRES_EXTRA_OPTS=--clean
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
 
   # --- LOGGING E MONITORAMENTO ---
   loki:
@@ -337,6 +372,8 @@ volumes:
   promtail_positions:
   promtail_wal:
   grafana_data:
+  finances_backups:
+  keycloak_backups:
 
 networks:
   poupe-ai-network:
