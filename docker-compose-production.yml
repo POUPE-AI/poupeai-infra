@@ -89,7 +89,7 @@ services:
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
       KC_HTTP_ENABLED: 'true'
-      KC_PROXY: 'none'
+      KC_PROXY: 'edge'
       KC_HOSTNAME_STRICT: 'false'
       KC_HOSTNAME_STRICT_HTTPS: 'false'
       KC_HOSTNAME: ${IP_ADDRESS}
