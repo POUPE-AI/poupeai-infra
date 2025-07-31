@@ -25,24 +25,20 @@ jobs:
 
             if [ -d "poupeai-infra" ] && [ ! -d "poupeai-infra/.git" ]; then
               echo "Diretório 'poupeai-infra' corrompido. Recriando..."
-              
               if [ -f "poupeai-infra/.env" ]; then
                 echo "Backup do arquivo .env realizado."
-                mv poupeai-infra/.env ./poupeai-infra.env.bak
+                sudo mv poupeai-infra/.env ./poupeai-infra.env.bak
               fi
-              
-              rm -rf poupeai-infra
+              sudo rm -rf poupeai-infra
               git clone ${{ env.INFRA_REPO_URL }} poupeai-infra
-              
               if [ -f "./poupeai-infra.env.bak" ]; then
                 echo "Restaurando o arquivo .env."
-                mv ./poupeai-infra.env.bak poupeai-infra/.env
+                sudo mv ./poupeai-infra.env.bak poupeai-infra/.env
               fi
 
             elif [ -d "poupeai-infra/.git" ]; then
               echo "Repositório existente encontrado. Atualizando..."
-              cd poupeai-infra
-              git pull
+              (cd poupeai-infra && sudo git reset --hard HEAD && sudo git pull)
             
             else
               echo "Repositório não encontrado. Clonando..."
@@ -52,6 +48,6 @@ jobs:
             cd poupeai-infra
             
             echo "Aplicando configurações de infraestrutura..."
-            docker compose -f docker-compose-production.yml up -d
+            sudo docker compose -f docker-compose-production.yml up -d
             
             echo "Deploy de infraestrutura concluído."
