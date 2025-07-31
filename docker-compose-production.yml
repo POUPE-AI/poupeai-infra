@@ -163,7 +163,7 @@ services:
 
   # --- SERVIÇOS DA APLICAÇÃO ---
   finances-service:
-    image: franciscopaulino/poupeai-finance-service:latest
+    image: franciscopaulinoq/poupeai-finance-service:latest
     container_name: finances-service-prod
     command: /start
     volumes:
@@ -182,7 +182,7 @@ services:
       - poupe-ai-network
 
   finances-celery-worker:
-    image: franciscopaulino/poupeai-finance-service:latest
+    image: franciscopaulinoq/poupeai-finance-service:latest
     container_name: finances-celery-worker-prod
     command: /start-celeryworker
     volumes:
@@ -198,7 +198,7 @@ services:
       - poupe-ai-network
 
   finances-celery-beat:
-    image: franciscopaulino/poupeai-finance-service:latest
+    image: franciscopaulinoq/poupeai-finance-service:latest
     container_name: finances-celery-beat-prod
     command: /start-celerybeat
     volumes:
@@ -214,7 +214,7 @@ services:
       - poupe-ai-network
   
   finances-celery-flower:
-    image: franciscopaulino/poupeai-finance-service:latest
+    image: franciscopaulinoq/poupeai-finance-service:latest
     container_name: finances-celery-flower-prod
     command: /start-flower
     volumes:
@@ -233,7 +233,7 @@ services:
       - poupe-ai-network
 
   notification-service:
-    image: franciscopaulino/poupeai-notification-service:latest
+    image: franciscopaulinoq/poupeai-notification-service:latest
     container_name: notification-service-prod
     volumes:
       - ./services/poupeai-notification-service/src:/app
@@ -269,7 +269,7 @@ services:
       - poupe-ai-network
 
   reports-service:
-    image: franciscopaulino/poupeai-report-service:latest
+    image: franciscopaulinoq/poupeai-report-service:latest
     container_name: reports-service-prod
     environment:
       ASPNETCORE_ENVIRONMENT: Development
