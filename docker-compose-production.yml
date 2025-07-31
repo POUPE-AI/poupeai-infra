@@ -119,10 +119,8 @@ services:
       KONG_DATABASE: 'off'
       KONG_DECLARATIVE_CONFIG: /opt/kong/kong.yaml
       KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_LISTEN: 'off'
       KONG_PROXY_LISTEN: 0.0.0.0:8000
       KONG_NGINX_DAEMON: 'off'
       KONG_PLUGINS: bundled,jwt-header-injector
@@ -130,7 +128,6 @@ services:
       KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
     ports:
       - "8000:8000"
-      - "8001:8001"
     volumes:
       - ./kong/kong.template.yaml:/opt/kong/kong.template.yaml
       - ./kong/plugins/jwt-header-injector:/usr/local/share/lua/5.1/kong/plugins/jwt-header-injector
