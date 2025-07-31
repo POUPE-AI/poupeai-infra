@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+.login-pf body {
+    background-image: url(../img/background_image.png) !important;
+    background-color: #585858;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+
+    display: flex;
+    flex-direction: column; 
+    justify-content: flex-end;
+    min-height: 100vh;
+}
+
+.login-pf-page-header {
+    display: none !important;
+}
+
+.login-pf-page {
+    width: 100%;
+}
+
+body.login-pf-body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: -1;
+}
+
+.login-pf-page, #kc-container {
+    background: none;
+    box-shadow: none;
+}
+
+#kc-header-wrapper {
+    margin-bottom: 20px;
+}
+
+#kc-form-login label {
+    display: none;
+}
+
+.card-pf {
+    background-color: #1e1e1e;
+    border-top: none;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+#kc-form {
+    width: 100%;
+    max-width: 400px;
+}
+
+#kc-form-wrapper {
+    background-color: #2D2D2D;
+    padding: 30px 40px;
+    border-radius: 12px;
+}
+
+#kc-page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 10px;
+    color: #F9690E;
+}
+
+.input-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 18px;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+input[type="text"], input[type="password"] {
+    background-color: #2c2c2c;
+    border: 0px;
+    color: #fff;
+    border-radius: 8px;
+    height: 50px;
+    padding: 0 15px 0 50px;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input[type="text"]:focus, input[type="password"]:focus {
+    border-color: #F9690E;
+    outline: none;
+    box-shadow: 0 0 5px rgba(249, 105, 14, 0.5);
+}
+
+#kc-form-buttons input[type="submit"] {
+    background-color: #F9690E;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    height: 50px;
+    width: 100%;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#kc-form-buttons input[type="submit"]:hover {
+    background-color: #E05A0D;
+}
+
+#kc-form-buttons {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    color: #F9690E;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+#kc-registration, #kc-form-options {
+    margin-top: 10px;
+    text-align: center;
+}
+
+#kc-registration {
+    color: #ccc;
+}
+
+#kc-social-providers ul {
+    padding: 0;
+    margin-top: 20px;
+}
+
+#kc-social-providers li {
+    list-style: none;
+}
+
+#kc-social-providers a {
+    display: block;
+    background-color: #2c2c2c;
+    color: #f5f5f5;
+    height: 50px;
+    width: 100%;
+    line-height: 50px;
+    border-radius: 8px;
+}
+
+.kc-social-provider-button {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15px;
+}
+
+.kc-social-provider-button:hover {
+    background-color: #4a4a4a;
+    text-decoration: none;
+}
+
+.kc-social-provider-logo-svg {
+    height: 24px;
+    width: 24px;
+    margin-right: 15px;
+}
+
+.kc-social-provider-name {
+    line-height: 1;
+    font-size: 15px;
+}
+
+#kc-social-providers a:hover {
+    background-color: #4a4a4a;
+    text-decoration: none;
+}
+
+.zocial-google {
+    padding-left: 20px;
+}

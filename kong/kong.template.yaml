@@ -1,0 +1,49 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: finances-service
+    url: http://finances-service:8000
+    routes:
+      - name: finances-all-routes
+        paths:
+          - /finances
+        strip_path: true
+        methods: [GET, POST, PUT, DELETE, PATCH, OPTIONS]
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: iss
+          claims_to_verify:
+            - exp
+      - name: jwt-header-injector
+
+  - name: reports-service
+    url: http://reports-service:8081
+    routes:
+      - name: reports-all-routes
+        paths:
+          - /reports
+        strip_path: true
+        methods: [GET, POST, PUT, DELETE, PATCH, OPTIONS]
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: iss
+          claims_to_verify:
+            - exp
+      - name: jwt-header-injector
+
+consumers:
+  - username: keycloak-consumer
+    jwt_secrets:
+      - key: __KEYCLOAK_ISSUER_URL__
+        algorithm: RS256
+        rsa_public_key: |
+          __KEYCLOAK_RSA_PUBLIC_KEY__
+
+plugins:
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
