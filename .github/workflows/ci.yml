@@ -32,6 +32,6 @@ jobs:
             
             # Executa o docker compose up para aplicar quaisquer mudanças
             echo "Aplicando configurações de infraestrutura..."
-            docker compose up -d
+            docker compose -f docker-compose-production.yml up -d
             
             echo "Deploy de infraestrutura concluído."
