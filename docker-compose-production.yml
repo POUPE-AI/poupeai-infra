@@ -166,8 +166,6 @@ services:
     image: franciscopaulinoq/poupeai-finance-service:latest
     container_name: finances-service-prod
     command: /start
-    volumes:
-      - ./services/poupeai-finance-service:/app:z
     environment:
       <<: *django-common-env
     depends_on:
@@ -185,8 +183,6 @@ services:
     image: franciscopaulinoq/poupeai-finance-service:latest
     container_name: finances-celery-worker-prod
     command: /start-celeryworker
-    volumes:
-      - ./services/poupeai-finance-service:/app:z
     environment:
       <<: *django-common-env
     depends_on:
@@ -201,8 +197,6 @@ services:
     image: franciscopaulinoq/poupeai-finance-service:latest
     container_name: finances-celery-beat-prod
     command: /start-celerybeat
-    volumes:
-      - ./services/poupeai-finance-service:/app:z
     environment:
       <<: *django-common-env
     depends_on:
@@ -217,8 +211,6 @@ services:
     image: franciscopaulinoq/poupeai-finance-service:latest
     container_name: finances-celery-flower-prod
     command: /start-flower
-    volumes:
-      - ./services/poupeai-finance-service:/app:z
     environment:
       <<: *django-common-env
       CELERY_FLOWER_USER: ${CELERY_FLOWER_USER}
@@ -235,8 +227,6 @@ services:
   notification-service:
     image: franciscopaulinoq/poupeai-notification-service:latest
     container_name: notification-service-prod
-    volumes:
-      - ./services/poupeai-notification-service/src:/app
     environment:
       DEBUG: 'True'
       RABBITMQ_USER: ${RABBITMQ_USER}
