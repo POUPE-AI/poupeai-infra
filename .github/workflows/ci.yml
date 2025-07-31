@@ -19,18 +19,38 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Define o diretório de trabalho
+            set -e
 
-            # Verifica se o diretório existe. Se não, clona. Se sim, atualiza.
-            if [ -d ${{ env.INFRA_DIR }} ]; then
-              cd ${{ env.INFRA_DIR }}
+            cd /home/deployer
+
+            if [ -d "poupeai-infra" ] && [ ! -d "poupeai-infra/.git" ]; then
+              echo "Diretório 'poupeai-infra' corrompido. Recriando..."
+              
+              if [ -f "poupeai-infra/.env" ]; then
+                echo "Backup do arquivo .env realizado."
+                mv poupeai-infra/.env ./poupeai-infra.env.bak
+              fi
+              
+              rm -rf poupeai-infra
+              git clone ${{ env.INFRA_REPO_URL }} poupeai-infra
+              
+              if [ -f "./poupeai-infra.env.bak" ]; then
+                echo "Restaurando o arquivo .env."
+                mv ./poupeai-infra.env.bak poupeai-infra/.env
+              fi
+
+            elif [ -d "poupeai-infra/.git" ]; then
+              echo "Repositório existente encontrado. Atualizando..."
+              cd poupeai-infra
               git pull
+            
             else
-              git clone ${{ env.INFRA_REPO_URL }} ${{ env.INFRA_DIR }}
-              cd ${{ env.INFRA_DIR }}
+              echo "Repositório não encontrado. Clonando..."
+              git clone ${{ env.INFRA_REPO_URL }} poupeai-infra
             fi
             
-            # Executa o docker compose up para aplicar quaisquer mudanças
+            cd poupeai-infra
+            
             echo "Aplicando configurações de infraestrutura..."
             docker compose -f docker-compose-production.yml up -d
             
