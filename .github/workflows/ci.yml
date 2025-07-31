@@ -48,6 +48,6 @@ jobs:
             cd poupeai-infra
             
             echo "Aplicando configurações de infraestrutura..."
-            docker compose -f docker-compose-production.yml up -d
+            sudo docker compose -f docker-compose-production.yml up -d
             
             echo "Deploy de infraestrutura concluído."
