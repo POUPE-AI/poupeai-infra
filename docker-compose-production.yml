@@ -273,6 +273,7 @@ services:
     container_name: reports-service-prod
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8081
       GeminiAI__ApiKey: ${GEMINI_API_KEY}
       DeepseekAI__ApiKey: ${DEEPSEEK_API_KEY}
       Database__ConnectionString: ${REPORT_DB_CONNECTION_STRING}

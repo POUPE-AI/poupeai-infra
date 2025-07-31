@@ -6,6 +6,7 @@ on:
 
 env:
   INFRA_REPO_URL: https://github.com/poupe-ai/poupeai-infra.git
+  INFRA_DIR: /home/deployer/poupeai-infra
 
 jobs:
   deploy:
@@ -19,15 +20,14 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             # Define o diretório de trabalho
-            INFRA_DIR="/home/deployer/ci-cd-infra"
 
             # Verifica se o diretório existe. Se não, clona. Se sim, atualiza.
-            if [ -d "$INFRA_DIR" ]; then
-              cd "$INFRA_DIR"
+            if [ -d ${{ env.INFRA_DIR }} ]; then
+              cd ${{ env.INFRA_DIR }}
               git pull
             else
-              git clone ${{ env.INFRA_REPO_URL }} "$INFRA_DIR"
-              cd "$INFRA_DIR"
+              git clone ${{ env.INFRA_REPO_URL }} ${{ env.INFRA_DIR }}
+              cd ${{ env.INFRA_DIR }}
             fi
             
             # Executa o docker compose up para aplicar quaisquer mudanças
