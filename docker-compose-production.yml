@@ -18,7 +18,7 @@ x-django-common-env: &django-common-env
   RABBITMQ_EXCHANGE_MAIN: ${RABBITMQ_EXCHANGE_MAIN}
   RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY}
   DJANGO_SETTINGS_MODULE: config.settings.local
-  DEBUG: 'false'
+  DEBUG: 'true'
   USE_DOCKER: 'yes'
 
 services:
@@ -37,6 +37,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -54,6 +55,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -62,13 +64,14 @@ services:
     container_name: redis-prod
     volumes:
       - redis_data:/data
-    networks:
-      - poupe-ai-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+    networks:
+      - poupe-ai-network
 
   # --- INFRAESTRUTURA CORE ---
   keycloak:
@@ -103,6 +106,7 @@ services:
     depends_on:
       keycloak-db:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -137,6 +141,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -156,6 +161,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -177,6 +183,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -194,6 +201,7 @@ services:
       - redis
       - finances-db
       - rabbitmq
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -211,6 +219,7 @@ services:
       - redis
       - finances-db
       - rabbitmq
+    restart: unless-stopped
     networks:
       - poupe-ai-network
   
@@ -231,6 +240,7 @@ services:
     depends_on:
       - redis
       - finances-db
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -268,6 +278,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -288,6 +299,7 @@ services:
       FinancesService__BaseUrl: ${FINANCES_SERVICE_BASE_URL}
       FinancesService__TransactionsEndpoint: ${FINANCES_SERVICE_TRANSACTIONS_ENDPOINT}
       FinancesService__CategoryEndpoint: ${FINANCES_SERVICE_CATEGORY_ENDPOINT}
+    restart: unless-stopped
     networks:
       - poupe-ai-network
 
@@ -301,6 +313,7 @@ services:
     volumes:
       - ./logging/loki/loki-config.yaml:/etc/loki/config.yaml:ro
       - loki_data:/loki
+    restart: unless-stopped
     networks:
       - poupe-ai-logging-network
 
@@ -317,6 +330,7 @@ services:
       - promtail_wal:/var/lib/promtail/wal
     depends_on:
       - loki
+    restart: unless-stopped
     networks:
       - poupe-ai-network
       - poupe-ai-logging-network
@@ -334,6 +348,7 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - loki
+    restart: unless-stopped
     networks:
       - poupe-ai-logging-network
 
