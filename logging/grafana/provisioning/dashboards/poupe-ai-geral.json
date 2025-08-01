@@ -1,59 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_LOKI",
-      "label": "Loki",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "loki",
-      "pluginName": "Loki"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "panel",
-      "id": "barchart",
-      "name": "Bar chart",
-      "version": ""
-    },
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "12.0.2"
-    },
-    {
-      "type": "panel",
-      "id": "logs",
-      "name": "Logs",
-      "version": ""
-    },
-    {
-      "type": "datasource",
-      "id": "loki",
-      "name": "Loki",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -73,13 +18,13 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 2,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {
@@ -129,15 +74,15 @@
       "pluginVersion": "12.0.2",
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
           "direction": "backward",
           "editorMode": "code",
           "expr": "sum(count_over_time({service_name=~\"$service\", level=\"ERROR\"} [$__range]))",
           "queryType": "range",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Total Errors",
@@ -146,7 +91,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {
@@ -275,7 +220,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {
@@ -330,7 +275,32 @@
           },
           "unit": "s"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "/api/v1/categories/"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -355,16 +325,16 @@
       "pluginVersion": "12.0.2",
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
           "direction": "backward",
           "editorMode": "code",
           "expr": "quantile_over_time(0.95, {service_name=\"finances-service\", event_type=\"REQUEST_COMPLETED\"} | json | label_format path = event_details_event_details_http_path | unwrap event_details_event_details_duration_ms | __error__=\"\" [$__interval]) / 1000",
           "legendFormat": "{{path}}",
           "queryType": "range",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Finance Service - API Request Latency (p95)",
@@ -373,7 +343,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {
@@ -425,15 +395,15 @@
       "pluginVersion": "12.0.2",
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
           "direction": "backward",
           "editorMode": "code",
           "expr": "sum by (event_type) (count_over_time({service_name=\"finances-service\", event_type=~\"TRANSACTION_CREATED|GOAL_CREATED|GOAL_COMPLETED|INVOICE_PAID\"} [$__range]))",
           "queryType": "instant",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Finance Service - Key Business Events",
@@ -456,7 +426,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {
@@ -535,16 +505,16 @@
       "pluginVersion": "12.0.2",
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
           "direction": "backward",
           "editorMode": "code",
           "expr": "sum by (status_code) (rate({service_name=\"finances-service\", event_type=\"REQUEST_COMPLETED\"} | json | label_format status_code = event_details_event_details_http_status_code [1m])) * 60",
           "legendFormat": "{{status_code}}",
           "queryType": "range",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Finance Service - API RPM by Status Code",
@@ -553,7 +523,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {
@@ -632,16 +602,16 @@
       "pluginVersion": "12.0.2",
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
           "direction": "backward",
           "editorMode": "code",
           "expr": "sum(rate({service_name=\"notification-service\", event_type=\"MESSAGE_RECEIVED\"} [1m]))",
           "legendFormat": "Received",
           "queryType": "range",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          }
+          "refId": "A"
         },
         {
           "datasource": {
@@ -663,7 +633,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {
@@ -753,16 +723,16 @@
       "pluginVersion": "12.0.2",
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
           "direction": "backward",
           "editorMode": "code",
           "expr": "sum by (event_type) (count_over_time({service_name=\"notification-service\", event_type=~\"MESSAGE_RETRY_SCHEDULED|MESSAGE_SENT_TO_DLQ.*\"} [$__range]))",
           "legendFormat": "{{event_type}}",
           "queryType": "instant",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Notification Service - Processing Failures (Retries & DLQ)",
@@ -771,7 +741,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "P8E80F9AEF21F6940"
       },
       "fieldConfig": {
         "defaults": {
@@ -851,16 +821,16 @@
       "pluginVersion": "12.0.2",
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
           "direction": "backward",
           "editorMode": "code",
           "expr": "quantile_over_time(0.95, {service_name=\"notification-service\", event_type=\"MESSAGE_PROCESSED_SUCCESSFULLY\"} | json | unwrap event_details_processed_in_ms | __error__=\"\" [$__interval]) / 1000",
           "legendFormat": "Latência p95",
           "queryType": "range",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Notification Service - Message Processing Latency (p95)",
@@ -869,7 +839,11 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -892,29 +866,37 @@
       "pluginVersion": "12.0.2",
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
           "direction": "backward",
           "editorMode": "code",
           "expr": "{service_name=~\"$service\", level=\"ERROR\"} | json",
           "queryType": "range",
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          }
+          "refId": "A"
         }
       ],
       "title": "Recent Errors",
       "type": "logs"
     }
   ],
-  "refresh": "5s",
+  "preload": false,
+  "refresh": "5m",
   "schemaVersion": 41,
   "tags": [],
   "templating": {
     "list": [
       {
         "allowCustomValue": false,
-        "current": {},
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "definition": "",
         "includeAll": true,
         "multi": true,
@@ -966,13 +948,12 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Poupe.AI Geral",
   "uid": "dee3b48e-6204-49e5-92e2-c5c386c8abae",
-  "version": 52,
-  "weekStart": ""
+  "version": 1
 }
