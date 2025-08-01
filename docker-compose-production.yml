@@ -51,6 +51,8 @@ services:
       POSTGRES_PASSWORD: ${FINANCE_DB_PASSWORD}
     volumes:
       - finances_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${FINANCE_DB_USER}", "-d", "${FINANCE_DB}"]
       interval: 10s
