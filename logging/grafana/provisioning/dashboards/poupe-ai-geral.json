@@ -972,12 +972,12 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-12h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Poupe.AI Geral",
   "uid": "dee3b48e-6204-49e5-92e2-c5c386c8abae",
-  "version": 3
+  "version": 4
 }
