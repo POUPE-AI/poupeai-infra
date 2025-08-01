@@ -549,11 +549,11 @@
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 10,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -890,9 +890,7 @@
       {
         "allowCustomValue": false,
         "current": {
-          "text": [
-            "All"
-          ],
+          "text": "All",
           "value": [
             "$__all"
           ]
@@ -955,5 +953,5 @@
   "timezone": "browser",
   "title": "Poupe.AI Geral",
   "uid": "dee3b48e-6204-49e5-92e2-c5c386c8abae",
-  "version": 1
+  "version": 2
 }
