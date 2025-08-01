@@ -575,9 +575,35 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "reqps"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "Processed"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -953,5 +979,5 @@
   "timezone": "browser",
   "title": "Poupe.AI Geral",
   "uid": "dee3b48e-6204-49e5-92e2-c5c386c8abae",
-  "version": 2
+  "version": 3
 }
