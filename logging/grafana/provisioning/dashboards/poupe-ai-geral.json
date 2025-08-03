@@ -225,40 +225,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 10,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "always",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
@@ -289,16 +256,7 @@
                 "readOnly": true
               }
             },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
+            "properties": []
           }
         ]
       },
@@ -310,17 +268,21 @@
       },
       "id": 6,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
       "pluginVersion": "12.0.2",
       "targets": [
@@ -331,14 +293,25 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "quantile_over_time(0.95, {service_name=\"finances-service\", event_type=\"REQUEST_COMPLETED\"} | json | label_format path = event_details_event_details_http_path | unwrap event_details_event_details_duration_ms | __error__=\"\" [$__interval]) / 1000",
-          "legendFormat": "{{path}}",
+          "expr": "quantile_over_time(0.95, {service_name=\"finances-service\", event_type=\"REQUEST_COMPLETED\"}\r\n  | json\r\n  | unwrap event_details_event_details_duration_ms\r\n  | __error__=\"\" [$__interval]\r\n) / 1000",
+          "legendFormat": "",
           "queryType": "range",
           "refId": "A"
         }
       ],
       "title": "Finance Service - API Request Latency (p95)",
-      "type": "timeseries"
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "labelsToFields": false,
+            "reducers": [
+              "last"
+            ]
+          }
+        }
+      ],
+      "type": "stat"
     },
     {
       "datasource": {
@@ -979,5 +952,5 @@
   "timezone": "browser",
   "title": "Poupe.AI Geral",
   "uid": "dee3b48e-6204-49e5-92e2-c5c386c8abae",
-  "version": 4
+  "version": 5
 }
