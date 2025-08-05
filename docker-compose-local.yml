@@ -299,6 +299,8 @@ services:
       FinancesService__BaseUrl: ${FINANCES_SERVICE_BASE_URL}
       FinancesService__TransactionsEndpoint: ${FINANCES_SERVICE_TRANSACTIONS_ENDPOINT}
       FinancesService__CategoryEndpoint: ${FINANCES_SERVICE_CATEGORY_ENDPOINT}
+    ports:
+      - "8081:8081"
     networks:
       - poupe-ai-network
 
