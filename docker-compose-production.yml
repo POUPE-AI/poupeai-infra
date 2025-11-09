@@ -330,17 +330,20 @@ services:
     networks:
       - poupe-ai-logging-network
 
-  promtail:
-    image: grafana/promtail:3.5.2
-    container_name: promtail-prod
-    command: 
-      - -config.file=/etc/promtail/config.yml
-      - -config.expand-env=true
+  alloy:
+    image: grafana/alloy:v1.11.3
+    container_name: alloy-prod
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./logging/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
-      - promtail_positions:/var/lib/promtail
-      - promtail_wal:/var/lib/promtail/wal
+      - ./logging/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy
+    ports:
+      - "12345:12345"
     depends_on:
       - loki
     restart: unless-stopped
@@ -361,6 +364,43 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - loki
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - poupe-ai-logging-network
+
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    container_name: prometheus-prod
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./logging/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - poupe-ai-logging-network
+
+  node-exporter:
+    image: prom/node-exporter:v1.10.2
+    container_name: node-exporter-prod
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
     restart: unless-stopped
     networks:
       - poupe-ai-logging-network
@@ -371,11 +411,11 @@ volumes:
   redis_data:
   rabbitmq_data:
   loki_data:
-  promtail_positions:
-  promtail_wal:
+  alloy_data:
   grafana_data:
   finances_backups:
   keycloak_backups:
+  prometheus_data:
 
 networks:
   poupe-ai-network:
