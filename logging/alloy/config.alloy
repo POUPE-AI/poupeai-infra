@@ -1,0 +1,58 @@
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+  
+  filter {
+    name   = "network"
+    values = ["poupe-ai-network", "poupe-ai-logging-network"]
+  }
+  
+  refresh_interval = "5s"
+}
+
+discovery.relabel "docker_relabel" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service_name"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+}
+
+
+loki.source.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.docker.containers.targets
+  forward_to       = [loki.process.docker_logs.receiver]
+  refresh_interval = "5s"
+  relabel_rules    = discovery.relabel.docker_relabel.rules
+}
+
+loki.process "docker_logs" {
+  forward_to = [loki.write.loki_endpoint.receiver]
+
+  stage.json {
+    expressions = {
+      level      = "level",
+      event_type = "event_type",
+    }
+  }
+
+  stage.labels {
+    values = {
+      level      = "",
+      event_type = "",
+    }
+  }
+}
+
+loki.write "loki_endpoint" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
