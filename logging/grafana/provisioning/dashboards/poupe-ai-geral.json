@@ -80,7 +80,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "sum(count_over_time({service_name=~\"$service\", level=\"ERROR\"} [$__range]))",
+          "expr": "sum(count_over_time({service_name=~\"$service\"} | json | level=\"ERROR\" [$__range]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -208,7 +208,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "sum by (level) (rate({service_name=~\"$service\", level=~\"$level\"} [5m]))",
+          "expr": "sum by (level) (rate({service_name=~\"$service\"} | json | level=~\"$level\" [5m]))",
           "legendFormat": "{{level}}",
           "queryType": "range",
           "refId": "A"
@@ -871,7 +871,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "{service_name=~\"$service\", level=\"ERROR\"} | json",
+          "expr": "{service_name=~\"$service\"} | json | level=\"ERROR\"",
           "queryType": "range",
           "refId": "A"
         }
