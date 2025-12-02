@@ -101,11 +101,15 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       POUPE_AI_BACKEND_CLIENT_SECRET: ${POUPE_AI_BACKEND_CLIENT_SECRET}
+      KC_SPI_EVENTS_LISTENER_POUPEAI_EVENT_LISTENER_CORE_SERVICE_URL: "${CORE_SERVICE_URL}"
+      KC_SPI_EVENTS_LISTENER_POUPEAI_EVENT_LISTENER_INTERNAL_API_KEY: "${INTERNAL_API_KEY}"
+      KC_SPI_EVENTS_LISTENER_POUPEAI_EVENT_LISTENER_INTERNAL_HEADER_NAME: "${INTERNAL_HEADER_NAME}"
     ports:
       - "8080:8080"
     volumes:
       - ./keycloak/realms/import:/opt/keycloak/data/import
       - ./keycloak/themes/poupe-ai:/opt/keycloak/themes/poupe-ai
+      - ./keycloak/providers/poupeai-keycloak-listener.jar:/opt/keycloak/providers/poupeai-listener.jar
     depends_on:
       keycloak-db:
         condition: service_healthy
