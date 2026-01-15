@@ -287,7 +287,7 @@ services:
 
   reports-service:
     build:
-      context: ./services/poupeai-report-service
+      context: ./services/poupeai-report-service/Src
       dockerfile: Dockerfile
     container_name: reports-service-local
     environment:
@@ -391,6 +391,15 @@ services:
       - "9100:9100"
     networks:
       - poupe-ai-logging-network
+  
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog-local
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - poupe-ai-network
 
 volumes:
   keycloak_data:
