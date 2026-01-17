@@ -23,7 +23,7 @@ x-django-common-env: &django-common-env
   USE_DOCKER: 'yes'
 
 services:
-  # --- BANCOS DE DADOS E CACHE ---
+  # --- INFRAESTRUTURA DE DADOS ---
   keycloak-db:
     image: postgres:17.5-alpine
     container_name: keycloak-db-local
@@ -65,15 +65,34 @@ services:
     container_name: redis-local
     volumes:
       - redis_data:/data
-    networks:
-      - poupe-ai-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - poupe-ai-network
 
-  # --- INFRAESTRUTURA CORE ---
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-local
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - poupe-ai-network
+
+  # --- CORE SERVICES ---
   keycloak:
     image: quay.io/keycloak/keycloak:26.3.2
     container_name: keycloak-local
@@ -88,11 +107,11 @@ services:
       KC_DB_URL_DATABASE: ${KEYCLOAK_DB}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: ${IP_ADDRESS}
       KC_HTTP_ENABLED: 'true'
       KC_PROXY: 'none'
       KC_HOSTNAME_STRICT: 'false'
       KC_HOSTNAME_STRICT_HTTPS: 'false'
-      KC_HOSTNAME: ${IP_ADDRESS}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -104,8 +123,8 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./keycloak/realms/import:/opt/keycloak/data/import
-      - ./keycloak/themes/poupe-ai:/opt/keycloak/themes/poupe-ai
+      - ./keycloak/realms/import:/opt/keycloak/data/import:ro
+      - ./keycloak/themes/poupe-ai:/opt/keycloak/themes/poupe-ai:ro
       - ./keycloak/providers/poupeai-keycloak-listener.jar:/opt/keycloak/providers/poupeai-listener.jar
     depends_on:
       keycloak-db:
@@ -121,12 +140,7 @@ services:
     environment:
       KONG_DATABASE: 'off'
       KONG_DECLARATIVE_CONFIG: /opt/kong/kong.yaml
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
-      KONG_ADMIN_GUI_URL: http://localhost:8002
       KONG_PROXY_LISTEN: 0.0.0.0:8000
       KONG_NGINX_DAEMON: 'off'
       KONG_PLUGINS: bundled,jwt-header-injector
@@ -136,7 +150,6 @@ services:
       - "8000:8000"
       - "8001:8001"
       - "8002:8002"
-      - "8443:8443"
     volumes:
       - ./kong/kong.template.yaml:/opt/kong/kong.template.yaml
       - ./kong/plugins/jwt-header-injector:/usr/local/share/lua/5.1/kong/plugins/jwt-header-injector
@@ -150,25 +163,7 @@ services:
     networks:
       - poupe-ai-network
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq-local
-    ports:
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq/
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "status"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks:
-      - poupe-ai-network
-
-  # --- SERVIÇOS DA APLICAÇÃO ---
+  # --- APLICAÇÃO ---
   finances-service:
     build:
       context: ./services/poupeai-finance-service
@@ -205,9 +200,12 @@ services:
     environment:
       <<: *django-common-env
     depends_on:
-      - redis
-      - finances-db
-      - rabbitmq
+      finances-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - poupe-ai-network
 
@@ -222,9 +220,10 @@ services:
     environment:
       <<: *django-common-env
     depends_on:
-      - redis
-      - finances-db
-      - rabbitmq
+      finances-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - poupe-ai-network
   
@@ -243,8 +242,10 @@ services:
     ports:
       - '5555:5555'
     depends_on:
-      - redis
-      - finances-db
+      finances-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - poupe-ai-network
 
@@ -308,13 +309,11 @@ services:
     networks:
       - poupe-ai-network
 
-  # --- LOGGING E MONITORAMENTO ---
+  # --- OBSERVABILIDADE ---
   loki:
     image: grafana/loki:3.5.2
     container_name: loki-local
-    command: 
-      - -config.file=/etc/loki/config.yaml
-      - -config.expand-env=true
+    command: ["-config.file=/etc/loki/config.yaml", "-config.expand-env=true"]
     volumes:
       - ./logging/loki/loki-config.yaml:/etc/loki/config.yaml:ro
       - loki_data:/loki
@@ -324,17 +323,11 @@ services:
   alloy:
     image: grafana/alloy:v1.11.3
     container_name: alloy-local
-    command:
-      - run
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --storage.path=/var/lib/alloy/data
-      - /etc/alloy/config.alloy
+    command: ["run", "--server.http.listen-addr=0.0.0.0:12345", "--storage.path=/var/lib/alloy/data", "/etc/alloy/config.alloy"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./logging/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - alloy_data:/var/lib/alloy
-    ports:
-      - "12345:12345"
     depends_on:
       - loki
     networks:

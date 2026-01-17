@@ -83,8 +83,6 @@ services:
     command:
       - start-dev
       - --import-realm
-      - --spi-theme-cache-themes=false
-      - --spi-theme-cache-templates=false
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: keycloak-db
@@ -152,8 +150,6 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq-prod
-    ports:
-      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
@@ -170,7 +166,7 @@ services:
 
   # --- SERVIÇOS DA APLICAÇÃO ---
   finances-service:
-    image: franciscopaulinoq/poupeai-finance-service:latest
+    image: franciscopaulinoq/poupeai-finance-service:${SERVICE_TAG}
     container_name: finances-service-prod
     command: /start
     environment:
@@ -187,35 +183,41 @@ services:
       - poupe-ai-network
 
   finances-celery-worker:
-    image: franciscopaulinoq/poupeai-finance-service:latest
+    image: franciscopaulinoq/poupeai-finance-service:${SERVICE_TAG}
     container_name: finances-celery-worker-prod
     command: /start-celeryworker
     environment:
       <<: *django-common-env
     depends_on:
-      - redis
-      - finances-db
-      - rabbitmq
+      finances-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - poupe-ai-network
 
   finances-celery-beat:
-    image: franciscopaulinoq/poupeai-finance-service:latest
+    image: franciscopaulinoq/poupeai-finance-service:${SERVICE_TAG}
     container_name: finances-celery-beat-prod
     command: /start-celerybeat
     environment:
       <<: *django-common-env
     depends_on:
-      - redis
-      - finances-db
-      - rabbitmq
+      finances-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - poupe-ai-network
   
   finances-celery-flower:
-    image: franciscopaulinoq/poupeai-finance-service:latest
+    image: franciscopaulinoq/poupeai-finance-service:${SERVICE_TAG}
     container_name: finances-celery-flower-prod
     command: /start-flower
     environment:
@@ -225,14 +227,16 @@ services:
     ports:
       - '5555:5555'
     depends_on:
-      - redis
-      - finances-db
+      finances-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - poupe-ai-network
 
   notification-service:
-    image: franciscopaulinoq/poupeai-notification-service:latest
+    image: franciscopaulinoq/poupeai-notification-service:${SERVICE_TAG}
     container_name: notification-service-prod
     environment:
       DEBUG: 'True'
@@ -266,7 +270,7 @@ services:
       - poupe-ai-network
 
   reports-service:
-    image: franciscopaulinoq/poupeai-report-service:latest
+    image: franciscopaulinoq/poupeai-report-service:${SERVICE_TAG}
     container_name: reports-service-prod
     environment:
       ASPNETCORE_ENVIRONMENT: Development
