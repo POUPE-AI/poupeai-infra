@@ -21,7 +21,7 @@ jobs:
           script: |
             set -e
 
-            cd /home/deployer
+            cd /home/deploy
 
             if [ -d "poupeai-infra" ] && [ ! -d "poupeai-infra/.git" ]; then
               echo "Diretório 'poupeai-infra' corrompido. Recriando..."
