@@ -2,12 +2,12 @@ _format_version: "3.0"
 _transform: true
 
 services:
-  - name: finances-service
-    url: http://finances-service:8000
+  - name: core-service
+    url: http://core-service:8085
     routes:
-      - name: finances-all-routes
+      - name: core-all-routes
         paths:
-          - /finances
+          - /core
         strip_path: true
         methods: [GET, POST, PUT, DELETE, PATCH, OPTIONS]
     plugins:

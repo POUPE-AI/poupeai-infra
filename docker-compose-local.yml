@@ -1,29 +1,7 @@
 name: poupe-ai-local
 
-x-django-common-env: &django-common-env
-  POSTGRES_DB: ${FINANCE_DB}
-  POSTGRES_USER: ${FINANCE_DB_USER}
-  POSTGRES_PASSWORD: ${FINANCE_DB_PASSWORD}
-  POSTGRES_HOST: finances-db
-  POSTGRES_PORT: 5432
-  DATABASE_URL: postgres://${FINANCE_DB_USER}:${FINANCE_DB_PASSWORD}@finances-db:5432/${FINANCE_DB}
-  KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
-  KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL}
-  REDIS_URL: ${REDIS_FINANCE_URL}
-  KEYCLOAK_SERVER_URL: ${KEYCLOAK_SERVER_URL}
-  KEYCLOAK_REALM_NAME: "poupe-ai"
-  KEYCLOAK_ADMIN_CLIENT_ID: "poupe-ai-backend"
-  KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
-  REPORTS_SERVICE_URL: ${REPORTS_SERVICE_URL}
-  RABBITMQ_URL: ${RABBITMQ_URL}
-  RABBITMQ_EXCHANGE_MAIN: ${RABBITMQ_EXCHANGE_MAIN}
-  RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY}
-  DJANGO_SETTINGS_MODULE: config.settings.local
-  DEBUG: 'true'
-  USE_DOCKER: 'yes'
-
 services:
-  # --- BANCOS DE DADOS E CACHE ---
+  # --- INFRAESTRUTURA DE DADOS ---
   keycloak-db:
     image: postgres:17.5-alpine
     container_name: keycloak-db-local
@@ -41,19 +19,19 @@ services:
     networks:
       - poupe-ai-network
 
-  finances-db:
+  core-db:
     image: postgres:17.5-alpine
-    container_name: finances-db-local
+    container_name: core-db-local
     environment:
-      POSTGRES_DB: ${FINANCE_DB}
-      POSTGRES_USER: ${FINANCE_DB_USER}
-      POSTGRES_PASSWORD: ${FINANCE_DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - finances_data:/var/lib/postgresql/data
+      - core_data:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${FINANCE_DB_USER}", "-d", "${FINANCE_DB}"]
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -65,15 +43,34 @@ services:
     container_name: redis-local
     volumes:
       - redis_data:/data
-    networks:
-      - poupe-ai-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - poupe-ai-network
 
-  # --- INFRAESTRUTURA CORE ---
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-local
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - poupe-ai-network
+
+  # --- CORE SERVICES ---
   keycloak:
     image: quay.io/keycloak/keycloak:26.3.2
     container_name: keycloak-local
@@ -88,21 +85,25 @@ services:
       KC_DB_URL_DATABASE: ${KEYCLOAK_DB}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: ${IP_ADDRESS}
       KC_HTTP_ENABLED: 'true'
       KC_PROXY: 'none'
       KC_HOSTNAME_STRICT: 'false'
       KC_HOSTNAME_STRICT_HTTPS: 'false'
-      KC_HOSTNAME: ${IP_ADDRESS}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       POUPE_AI_BACKEND_CLIENT_SECRET: ${POUPE_AI_BACKEND_CLIENT_SECRET}
+      KC_SPI_EVENTS_LISTENER_POUPEAI_EVENT_LISTENER_CORE_SERVICE_URL: "${CORE_SERVICE_URL}"
+      KC_SPI_EVENTS_LISTENER_POUPEAI_EVENT_LISTENER_INTERNAL_API_KEY: "${INTERNAL_API_KEY}"
+      KC_SPI_EVENTS_LISTENER_POUPEAI_EVENT_LISTENER_INTERNAL_HEADER_NAME: "${INTERNAL_HEADER_NAME}"
     ports:
       - "8080:8080"
     volumes:
-      - ./keycloak/realms/import:/opt/keycloak/data/import
-      - ./keycloak/themes/poupe-ai:/opt/keycloak/themes/poupe-ai
+      - ./keycloak/realms/import:/opt/keycloak/data/import:ro
+      - ./keycloak/themes/poupe-ai:/opt/keycloak/themes/poupe-ai:ro
+      - ./keycloak/providers/poupeai-keycloak-listener.jar:/opt/keycloak/providers/poupeai-listener.jar
     depends_on:
       keycloak-db:
         condition: service_healthy
@@ -117,22 +118,21 @@ services:
     environment:
       KONG_DATABASE: 'off'
       KONG_DECLARATIVE_CONFIG: /opt/kong/kong.yaml
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
-      KONG_ADMIN_GUI_URL: http://localhost:8002
       KONG_PROXY_LISTEN: 0.0.0.0:8000
       KONG_NGINX_DAEMON: 'off'
       KONG_PLUGINS: bundled,jwt-header-injector
+      KONG_LOG_LEVEL: debug
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_LUA_PACKAGE_PATH: /usr/local/share/lua/5.1/kong/plugins/?.lua;;
       KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
     ports:
       - "8000:8000"
       - "8001:8001"
       - "8002:8002"
-      - "8443:8443"
     volumes:
       - ./kong/kong.template.yaml:/opt/kong/kong.template.yaml
       - ./kong/plugins/jwt-header-injector:/usr/local/share/lua/5.1/kong/plugins/jwt-header-injector
@@ -146,101 +146,26 @@ services:
     networks:
       - poupe-ai-network
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq-local
-    ports:
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq/
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "status"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks:
-      - poupe-ai-network
-
-  # --- SERVIÇOS DA APLICAÇÃO ---
-  finances-service:
+  # --- APLICAÇÃO ---
+  core-service:
     build:
-      context: ./services/poupeai-finance-service
-      dockerfile: ./compose/local/django/Dockerfile
-    container_name: finances-service-local
-    command: /start
-    volumes:
-      - ./services/poupeai-finance-service:/app:z
+      context: ./services/poupeai-core-service
+      dockerfile: Dockerfile
+    container_name: core-service-local
     environment:
-      <<: *django-common-env
-      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME}
-      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
-      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
-    ports:
-      - "8005:8000"
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
+      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL}
     depends_on:
-      finances-db:
+      core-db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - poupe-ai-network
-
-  finances-celery-worker:
-    build:
-      context: ./services/poupeai-finance-service
-      dockerfile: ./compose/local/django/Dockerfile
-    container_name: finances-celery-worker-local
-    command: /start-celeryworker
-    volumes:
-      - ./services/poupeai-finance-service:/app:z
-    environment:
-      <<: *django-common-env
-    depends_on:
-      - redis
-      - finances-db
-      - rabbitmq
-    networks:
-      - poupe-ai-network
-
-  finances-celery-beat:
-    build:
-      context: ./services/poupeai-finance-service
-      dockerfile: ./compose/local/django/Dockerfile
-    container_name: finances-celery-beat-local
-    command: /start-celerybeat
-    volumes:
-      - ./services/poupeai-finance-service:/app:z
-    environment:
-      <<: *django-common-env
-    depends_on:
-      - redis
-      - finances-db
-      - rabbitmq
-    networks:
-      - poupe-ai-network
-  
-  finances-celery-flower:
-    build:
-      context: ./services/poupeai-finance-service
-      dockerfile: ./compose/local/django/Dockerfile
-    container_name: finances-celery-flower-local
-    command: /start-flower
-    volumes:
-      - ./services/poupeai-finance-service:/app:z
-    environment:
-      <<: *django-common-env
-      CELERY_FLOWER_USER: ${CELERY_FLOWER_USER}
-      CELERY_FLOWER_PASSWORD: ${CELERY_FLOWER_PASSWORD}
     ports:
-      - '5555:5555'
-    depends_on:
-      - redis
-      - finances-db
+      - "8085:8085"
     networks:
       - poupe-ai-network
 
@@ -283,7 +208,7 @@ services:
 
   reports-service:
     build:
-      context: ./services/poupeai-report-service
+      context: ./services/poupeai-report-service/Src
       dockerfile: Dockerfile
     container_name: reports-service-local
     environment:
@@ -304,30 +229,25 @@ services:
     networks:
       - poupe-ai-network
 
-  # --- LOGGING E MONITORAMENTO ---
+  # --- OBSERVABILIDADE ---
   loki:
     image: grafana/loki:3.5.2
     container_name: loki-local
-    command: 
-      - -config.file=/etc/loki/config.yaml
-      - -config.expand-env=true
+    command: ["-config.file=/etc/loki/config.yaml", "-config.expand-env=true"]
     volumes:
       - ./logging/loki/loki-config.yaml:/etc/loki/config.yaml:ro
       - loki_data:/loki
     networks:
       - poupe-ai-logging-network
 
-  promtail:
-    image: grafana/promtail:3.5.2
-    container_name: promtail-local
-    command: 
-      - -config.file=/etc/promtail/config.yml
-      - -config.expand-env=true
+  alloy:
+    image: grafana/alloy:v1.11.3
+    container_name: alloy-local
+    command: ["run", "--server.http.listen-addr=0.0.0.0:12345", "--storage.path=/var/lib/alloy/data", "/etc/alloy/config.alloy"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./logging/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
-      - promtail_positions:/var/lib/promtail
-      - promtail_wal:/var/lib/promtail/wal
+      - ./logging/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy
     depends_on:
       - loki
     networks:
@@ -347,18 +267,62 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - loki
+      - prometheus
     networks:
       - poupe-ai-logging-network
 
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    container_name: prometheus-local
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./logging/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - poupe-ai-logging-network
+
+  node-exporter:
+    image: prom/node-exporter:v1.10.2
+    container_name: node-exporter-local
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
+    networks:
+      - poupe-ai-logging-network
+  
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog-local
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - poupe-ai-network
+
 volumes:
   keycloak_data:
-  finances_data:
+  core_data:
   redis_data:
   rabbitmq_data:
   loki_data:
-  promtail_positions:
-  promtail_wal:
+  alloy_data:
   grafana_data:
+  prometheus_data:
 
 networks:
   poupe-ai-network:

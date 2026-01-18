@@ -1,27 +1,5 @@
 name: poupe-ai-production
 
-x-django-common-env: &django-common-env
-  POSTGRES_DB: ${FINANCE_DB}
-  POSTGRES_USER: ${FINANCE_DB_USER}
-  POSTGRES_PASSWORD: ${FINANCE_DB_PASSWORD}
-  POSTGRES_HOST: finances-db
-  POSTGRES_PORT: 5432
-  DATABASE_URL: postgres://${FINANCE_DB_USER}:${FINANCE_DB_PASSWORD}@finances-db:5432/${FINANCE_DB}
-  KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
-  KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL}
-  REDIS_URL: ${REDIS_FINANCE_URL}
-  KEYCLOAK_SERVER_URL: ${KEYCLOAK_SERVER_URL}
-  KEYCLOAK_REALM_NAME: "poupe-ai"
-  KEYCLOAK_ADMIN_CLIENT_ID: "poupe-ai-backend"
-  KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
-  REPORTS_SERVICE_URL: ${REPORTS_SERVICE_URL}
-  RABBITMQ_URL: ${RABBITMQ_URL}
-  RABBITMQ_EXCHANGE_MAIN: ${RABBITMQ_EXCHANGE_MAIN}
-  RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY}
-  DJANGO_SETTINGS_MODULE: config.settings.local
-  DEBUG: 'true'
-  USE_DOCKER: 'yes'
-
 services:
   # --- BANCOS DE DADOS E CACHE ---
   keycloak-db:
@@ -42,19 +20,19 @@ services:
     networks:
       - poupe-ai-network
 
-  finances-db:
+  core-db:
     image: postgres:17.5-alpine
-    container_name: finances-db-prod
+    container_name: core-db-local
     environment:
-      POSTGRES_DB: ${FINANCE_DB}
-      POSTGRES_USER: ${FINANCE_DB_USER}
-      POSTGRES_PASSWORD: ${FINANCE_DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - finances_data:/var/lib/postgresql/data
+      - core_data:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${FINANCE_DB_USER}", "-d", "${FINANCE_DB}"]
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -83,8 +61,6 @@ services:
     command:
       - start-dev
       - --import-realm
-      - --spi-theme-cache-themes=false
-      - --spi-theme-cache-templates=false
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: keycloak-db
@@ -101,11 +77,15 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       POUPE_AI_BACKEND_CLIENT_SECRET: ${POUPE_AI_BACKEND_CLIENT_SECRET}
+      KC_SPI_EVENTS_LISTENER_POUPEAI_EVENT_LISTENER_CORE_SERVICE_URL: "${CORE_SERVICE_URL}"
+      KC_SPI_EVENTS_LISTENER_POUPEAI_EVENT_LISTENER_INTERNAL_API_KEY: "${INTERNAL_API_KEY}"
+      KC_SPI_EVENTS_LISTENER_POUPEAI_EVENT_LISTENER_INTERNAL_HEADER_NAME: "${INTERNAL_HEADER_NAME}"
     ports:
       - "8080:8080"
     volumes:
       - ./keycloak/realms/import:/opt/keycloak/data/import
       - ./keycloak/themes/poupe-ai:/opt/keycloak/themes/poupe-ai
+      - ./keycloak/providers/poupeai-keycloak-listener.jar:/opt/keycloak/providers/poupeai-listener.jar
     depends_on:
       keycloak-db:
         condition: service_healthy
@@ -148,8 +128,6 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq-prod
-    ports:
-      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
@@ -165,70 +143,27 @@ services:
       - poupe-ai-network
 
   # --- SERVIÇOS DA APLICAÇÃO ---
-  finances-service:
-    image: franciscopaulinoq/poupeai-finance-service:latest
-    container_name: finances-service-prod
-    command: /start
+  core-service:
+    image: franciscopaulinoq/poupeai-core-service:${SERVICE_TAG}
+    container_name: core-service-local
     environment:
-      <<: *django-common-env
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
+      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL}
     depends_on:
-      finances-db:
+      core-db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - poupe-ai-network
-
-  finances-celery-worker:
-    image: franciscopaulinoq/poupeai-finance-service:latest
-    container_name: finances-celery-worker-prod
-    command: /start-celeryworker
-    environment:
-      <<: *django-common-env
-    depends_on:
-      - redis
-      - finances-db
-      - rabbitmq
-    restart: unless-stopped
-    networks:
-      - poupe-ai-network
-
-  finances-celery-beat:
-    image: franciscopaulinoq/poupeai-finance-service:latest
-    container_name: finances-celery-beat-prod
-    command: /start-celerybeat
-    environment:
-      <<: *django-common-env
-    depends_on:
-      - redis
-      - finances-db
-      - rabbitmq
-    restart: unless-stopped
-    networks:
-      - poupe-ai-network
-  
-  finances-celery-flower:
-    image: franciscopaulinoq/poupeai-finance-service:latest
-    container_name: finances-celery-flower-prod
-    command: /start-flower
-    environment:
-      <<: *django-common-env
-      CELERY_FLOWER_USER: ${CELERY_FLOWER_USER}
-      CELERY_FLOWER_PASSWORD: ${CELERY_FLOWER_PASSWORD}
-    ports:
-      - '5555:5555'
-    depends_on:
-      - redis
-      - finances-db
     restart: unless-stopped
     networks:
       - poupe-ai-network
 
   notification-service:
-    image: franciscopaulinoq/poupeai-notification-service:latest
+    image: franciscopaulinoq/poupeai-notification-service:${SERVICE_TAG}
     container_name: notification-service-prod
     environment:
       DEBUG: 'True'
@@ -262,7 +197,7 @@ services:
       - poupe-ai-network
 
   reports-service:
-    image: franciscopaulinoq/poupeai-report-service:latest
+    image: franciscopaulinoq/poupeai-report-service:${SERVICE_TAG}
     container_name: reports-service-prod
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -330,17 +265,20 @@ services:
     networks:
       - poupe-ai-logging-network
 
-  promtail:
-    image: grafana/promtail:3.5.2
-    container_name: promtail-prod
-    command: 
-      - -config.file=/etc/promtail/config.yml
-      - -config.expand-env=true
+  alloy:
+    image: grafana/alloy:v1.11.3
+    container_name: alloy-prod
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./logging/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
-      - promtail_positions:/var/lib/promtail
-      - promtail_wal:/var/lib/promtail/wal
+      - ./logging/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy
+    ports:
+      - "12345:12345"
     depends_on:
       - loki
     restart: unless-stopped
@@ -361,6 +299,43 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - loki
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - poupe-ai-logging-network
+
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    container_name: prometheus-prod
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./logging/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - poupe-ai-logging-network
+
+  node-exporter:
+    image: prom/node-exporter:v1.10.2
+    container_name: node-exporter-prod
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
     restart: unless-stopped
     networks:
       - poupe-ai-logging-network
@@ -371,11 +346,11 @@ volumes:
   redis_data:
   rabbitmq_data:
   loki_data:
-  promtail_positions:
-  promtail_wal:
+  alloy_data:
   grafana_data:
   finances_backups:
   keycloak_backups:
+  prometheus_data:
 
 networks:
   poupe-ai-network:
