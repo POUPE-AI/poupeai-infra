@@ -217,19 +217,19 @@ services:
       - poupe-ai-network
   
   # --- BACKUPS ---
-  finances-db-backup:
+  core-db-backup:
     image: prodrigestivill/postgres-backup-local:17-alpine
-    container_name: finances-db-backup-prod
+    container_name: core-db-backup-prod
     restart: unless-stopped
     volumes:
-      - finances_backups:/backups
+      - core_backups:/backups
     networks:
       - poupe-ai-network
     environment:
-      - POSTGRES_HOST=finances-db
-      - POSTGRES_DB=${FINANCE_DB}
-      - POSTGRES_USER=${FINANCE_DB_USER}
-      - POSTGRES_PASSWORD=${FINANCE_DB_PASSWORD}
+      - POSTGRES_HOST=core-db
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_EXTRA_OPTS=--clean
       - SCHEDULE=@daily
       - BACKUP_KEEP_DAYS=7
@@ -342,13 +342,13 @@ services:
 
 volumes:
   keycloak_data:
-  finances_data:
+  core_data:
   redis_data:
   rabbitmq_data:
   loki_data:
   alloy_data:
   grafana_data:
-  finances_backups:
+  core_backups:
   keycloak_backups:
   prometheus_data:
 
