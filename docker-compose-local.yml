@@ -122,6 +122,11 @@ services:
       KONG_PROXY_LISTEN: 0.0.0.0:8000
       KONG_NGINX_DAEMON: 'off'
       KONG_PLUGINS: bundled,jwt-header-injector
+      KONG_LOG_LEVEL: debug
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_LUA_PACKAGE_PATH: /usr/local/share/lua/5.1/kong/plugins/?.lua;;
       KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
     ports:
@@ -154,8 +159,8 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      KEYCLOAK_URL: ${KEYCLOAK_SERVER_URL}
-      KEYCLOAK_POUPEAI_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
+      KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL}
     depends_on:
       core-db:
         condition: service_healthy
