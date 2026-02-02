@@ -145,8 +145,12 @@ services:
   # --- SERVIÇOS DA APLICAÇÃO ---
   core-service:
     image: franciscopaulinoq/poupeai-core-service:${SERVICE_TAG}
-    container_name: core-service-local
+    container_name: core-service-prod
     environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
@@ -218,6 +222,30 @@ services:
       FinancesService__BaseUrl: ${FINANCES_SERVICE_BASE_URL}
       FinancesService__TransactionsEndpoint: ${FINANCES_SERVICE_TRANSACTIONS_ENDPOINT}
       FinancesService__CategoryEndpoint: ${FINANCES_SERVICE_CATEGORY_ENDPOINT}
+    restart: unless-stopped
+    networks:
+      - poupe-ai-network
+  
+  ingestion-service:
+    image: franciscopaulinoq/poupeai-ingestion-service:${SERVICE_TAG}
+    container_name: ingestion-service-prod
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      MINIO_URL: ${MINIO_SERVER_URL}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      CORE_SERVICE_URL: ${IN_CORE_SERVICE_URL}
+      REPORT_SERVICE_URL: ${IN_REPORT_SERVICE_URL}
+    extra_hosts:
+      - "${IP_ADDRESS}:host-gateway"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - poupe-ai-network
