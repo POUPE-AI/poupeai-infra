@@ -221,7 +221,6 @@ services:
       Keycloak__ValidIssuer: ${KEYCLOAK_ISSUER}
       FinancesService__BaseUrl: ${FINANCES_SERVICE_BASE_URL}
       FinancesService__TransactionsEndpoint: ${FINANCES_SERVICE_TRANSACTIONS_ENDPOINT}
-      FinancesService__CategoryEndpoint: ${FINANCES_SERVICE_CATEGORY_ENDPOINT}
     restart: unless-stopped
     networks:
       - poupe-ai-network
