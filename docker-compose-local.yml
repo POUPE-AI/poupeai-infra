@@ -235,6 +235,33 @@ services:
     networks:
       - poupe-ai-network
   
+  ingestion-service:
+    build:
+      context: ./services/poupeai-ingestion-service
+      dockerfile: Dockerfile
+    container_name: ingestion-service-local
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      MINIO_URL: ${MINIO_SERVER_URL}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      CORE_SERVICE_URL: ${IN_CORE_SERVICE_URL}
+      REPORT_SERVICE_URL: ${IN_REPORT_SERVICE_URL}
+    extra_hosts:
+      - "${IP_ADDRESS}:host-gateway"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    networks:
+      - poupe-ai-network
+  
   minio:
     image: minio/minio:RELEASE.2024-11-07T00-52-20Z
     container_name: minio-local
