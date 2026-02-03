@@ -1,11 +1,11 @@
 apiVersion: 1
 
 providers:
-  - name: 'Poupe.AI Dashboards'
-    orgId: 1
+  - name: 'PoupeAI Dashboards'
+    ord: 1
     folder: 'Poupe.AI'
     type: file
     disableDeletion: false
-    editable: true
+    updateIntervalSeconds: 10
     options:
       path: /etc/grafana/provisioning/dashboards

@@ -18,8 +18,23 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
-  "links": [],
+  "id": 3,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [
+        "poupeai"
+      ],
+      "targetBlank": true,
+      "title": "Sistemas Poupe.AI",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
   "panels": [
     {
       "collapsed": false,
@@ -29,9 +44,9 @@
         "x": 0,
         "y": 0
       },
-      "id": 1,
+      "id": 10,
       "panels": [],
-      "title": "Visão Geral do Processamento (RabbitMQ)",
+      "title": "Saúde Técnica (Core Service) - Fonte: Prometheus",
       "type": "row"
     },
     {
@@ -51,6 +66,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "opacity",
@@ -81,8 +97,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -92,11 +107,11 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 6,
         "x": 0,
         "y": 1
       },
-      "id": 2,
+      "id": 1,
       "options": {
         "legend": {
           "calcs": [
@@ -108,10 +123,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
@@ -119,8 +136,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(spring_rabbitmq_listener_seconds_count{application=\"$application\"}[1m])) * 60",
-          "legendFormat": "Jobs Processados (RPM)",
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"$application\"}[1m])) * 60",
+          "legendFormat": "Total Requests",
           "range": true,
           "refId": "A"
         },
@@ -130,13 +147,123 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(spring_rabbitmq_listener_seconds_count{application=\"$application\", exception!=\"none\"}[1m])) * 60",
-          "legendFormat": "Falhas no Consumo",
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"$application\", status=~\"2..\"}[1m])) * 60",
+          "legendFormat": "Sucesso (2xx)",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "Throughput (Jobs de Ingestão)",
+      "title": "Requisições por Minuto (RPM)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"$application\"}[5m])) by (le))",
+          "legendFormat": "p95 (95% das reqs)",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{application=\"$application\"}[5m])) by (le))",
+          "legendFormat": "p50 (Mediana)",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Latência (Tempo de Resposta)",
       "type": "timeseries"
     },
     {
@@ -150,16 +277,17 @@
             "mode": "thresholds"
           },
           "mappings": [],
+          "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "orange",
-                "value": 2
+                "value": 1
               },
               {
                 "color": "red",
@@ -167,14 +295,14 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "percent"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
+        "w": 6,
+        "x": 12,
         "y": 1
       },
       "id": 3,
@@ -195,6 +323,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
@@ -202,13 +331,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(spring_rabbitmq_listener_seconds_bucket{application=\"$application\"}[5m])) by (le))",
-          "legendFormat": "Duração do Job (P95)",
+          "expr": "(sum(rate(http_server_requests_seconds_count{application=\"$application\", status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=\"$application\"}[1m]))) * 100",
+          "legendFormat": "Taxa de Erro",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Tempo de Processamento (Parse + IA + Persistência)",
+      "title": "Taxa de Erros HTTP (5xx)",
       "type": "stat"
     },
     {
@@ -219,7 +348,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "custom": {
             "axisBorderShow": false,
@@ -228,6 +357,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -258,19 +388,21 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 10
               }
             ]
-          },
-          "unit": "s"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
+        "w": 6,
+        "x": 18,
         "y": 1
       },
       "id": 4,
@@ -282,10 +414,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
@@ -293,13 +427,24 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(http_client_requests_seconds_bucket{application=\"$application\", uri!~\".*actuator.*\"}[5m])) by (le, uri))",
-          "legendFormat": "{{uri}}",
+          "expr": "hikaricp_connections_active{application=\"$application\"}",
+          "legendFormat": "Ativas",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "hikaricp_connections_max{application=\"$application\"}",
+          "legendFormat": "Máximo",
+          "range": true,
+          "refId": "B"
         }
       ],
-      "title": "Latência de Dependências (Feign Clients)",
+      "title": "Conexões BD (HikariCP)",
       "type": "timeseries"
     },
     {
@@ -310,9 +455,9 @@
         "x": 0,
         "y": 9
       },
-      "id": 6,
+      "id": 12,
       "panels": [],
-      "title": "Indicadores de Negócio (Logs)",
+      "title": "Indicadores de Negócio - Fonte: Loki (Logs)",
       "type": "row"
     },
     {
@@ -320,6 +465,7 @@
         "type": "loki",
         "uid": "${DS_LOKI}"
       },
+      "description": "Baseado no campo event.type dos logs JSON",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -332,6 +478,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -362,8 +509,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -385,24 +531,27 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
             "type": "loki",
             "uid": "${DS_LOKI}"
           },
+          "direction": "backward",
           "editorMode": "code",
-          "expr": "sum by (event_type) (count_over_time({container=~\"$container_loki\"} | json | event_type=~\"INGESTION_JOB.*\" [$__interval]))",
+          "expr": "sum by (event_type) (count_over_time({container=~\"$container_loki\"} | json | event_type!=\"\" [$__interval]))",
           "legendFormat": "{{event_type}}",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Status dos Jobs (Sucesso vs Falha)",
+      "title": "Eventos de Negócio (Timeline)",
       "type": "timeseries"
     },
     {
@@ -421,8 +570,6 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
             "fillOpacity": 80,
             "gradientMode": "none",
             "hideFrom": {
@@ -430,18 +577,9 @@
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -452,8 +590,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -466,7 +603,7 @@
         "x": 12,
         "y": 10
       },
-      "id": 8,
+      "id": 6,
       "options": {
         "barRadius": 0,
         "barWidth": 0.97,
@@ -482,12 +619,14 @@
         "showValue": "auto",
         "stacking": "none",
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         },
         "xTickLabelRotation": 0,
         "xTickLabelSpacing": 0
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
@@ -495,13 +634,13 @@
             "uid": "${DS_LOKI}"
           },
           "editorMode": "code",
-          "expr": "sum by (event_type) (count_over_time({container=~\"$container_loki\"} | json | event_type=~\"OFX_PARSED|AI_CATEGORIZATION_FINISHED\" [$__range]))",
+          "expr": "sum by (event_type) (count_over_time({container=~\"$container_loki\"} | json | event_type!=\"\" [$__range]))",
           "legendFormat": "{{event_type}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
-      "title": "Passos Concluídos (Parse vs IA)",
+      "title": "Total de Eventos (Período Selecionado)",
       "type": "barchart"
     },
     {
@@ -512,9 +651,9 @@
         "x": 0,
         "y": 18
       },
-      "id": 10,
+      "id": 14,
       "panels": [],
-      "title": "Logs de Execução (Filtrável por Job ID)",
+      "title": "Logs e Erros Detalhados",
       "type": "row"
     },
     {
@@ -523,37 +662,16 @@
         "uid": "${DS_LOKI}"
       },
       "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
+        "defaults": {},
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
+        "h": 7,
         "w": 24,
         "x": 0,
         "y": 19
       },
-      "id": 7,
+      "id": 8,
       "options": {
         "cellHeight": "sm",
         "dedupStrategy": "none",
@@ -571,165 +689,108 @@
         "showCommonLabels": false,
         "showHeader": true,
         "showLabels": false,
-        "showTime": true,
+        "showTime": false,
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
             "type": "loki",
             "uid": "${DS_LOKI}"
           },
+          "direction": "backward",
           "editorMode": "code",
-          "expr": "{container=~\"$container_loki\"} | json | job_id=~\"$job_id\"",
+          "expr": "{container=~\"$container_loki\"} | json | log_level=\"ERROR\"",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Logs de Ingestão",
+      "title": "Últimos Logs de ERRO (JSON Parsed)",
       "type": "logs"
     }
   ],
+  "preload": false,
   "refresh": "10s",
-  "schemaVersion": 39,
+  "schemaVersion": 41,
   "tags": [
     "poupeai",
-    "ingestion"
+    "core"
   ],
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "Prometheus",
-          "value": "Prometheus"
-        },
-        "hide": 0,
+        "current": {},
         "includeAll": false,
         "label": "DS Prometheus",
-        "multi": false,
         "name": "DS_PROMETHEUS",
         "options": [],
         "query": "prometheus",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "Loki",
-          "value": "Loki"
-        },
-        "hide": 0,
+        "current": {},
         "includeAll": false,
         "label": "DS Loki",
-        "multi": false,
         "name": "DS_LOKI",
         "options": [],
         "query": "loki",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       },
       {
-        "current": {
-          "selected": true,
-          "text": "poupeai-ingestion-service",
-          "value": "poupeai-ingestion-service"
-        },
+        "current": {},
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(jvm_memory_used_bytes, application)",
-        "hide": 0,
+        "definition": "label_values(http_server_requests_seconds_count, application)",
         "includeAll": false,
-        "label": "Application",
-        "multi": false,
+        "label": "Application (Prom)",
         "name": "application",
         "options": [],
         "query": {
-          "query": "label_values(jvm_memory_used_bytes, application)",
+          "query": "label_values(http_server_requests_seconds_count, application)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "ingestion-service-prod",
-          "value": "ingestion-service-prod"
-        },
+        "current": {},
         "datasource": {
           "type": "loki",
           "uid": "${DS_LOKI}"
         },
         "definition": "label_values(container)",
-        "hide": 0,
         "includeAll": false,
         "label": "Container (Loki)",
-        "multi": false,
         "name": "container_loki",
         "options": [],
         "query": {
           "label": "container",
           "refId": "LokiVariableQueryEditor-VariableQuery",
-          "stream": "{container=~\".*ingestion-service.*\"}",
+          "stream": "{container=~\".*core-service.*\"}",
           "type": 1
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
-      },
-      {
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "loki",
-          "uid": "${DS_LOKI}"
-        },
-        "definition": "",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Job ID (Filtro)",
-        "multi": false,
-        "name": "job_id",
-        "options": [],
-        "query": {
-          "label": "job_id",
-          "refId": "LokiVariableQueryEditor-VariableQuery",
-          "stream": "{container=~\".*ingestion-service.*\"} | json",
-          "type": 1
-        },
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Poupe.AI - Ingestion Service",
-  "uid": "poupeai-ingestion-v1",
-  "version": 1,
-  "weekStart": ""
+  "title": "Poupe.AI - Core Service (Observability)",
+  "uid": "poupeai-core-monitoring-v2",
+  "version": 2
 }
