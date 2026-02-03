@@ -31,7 +31,7 @@
       },
       "id": 1,
       "panels": [],
-      "title": "Visão Geral do Processamento (RabbitMQ)",
+      "title": "Métricas de Negócio (Prometheus)",
       "type": "row"
     },
     {
@@ -53,7 +53,7 @@
             "barAlignment": 0,
             "drawStyle": "line",
             "fillOpacity": 10,
-            "gradientMode": "opacity",
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -85,8 +85,7 @@
                 "value": null
               }
             ]
-          },
-          "unit": "rpm"
+          }
         },
         "overrides": []
       },
@@ -99,11 +98,8 @@
       "id": 2,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
+          "calcs": [],
+          "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
@@ -119,8 +115,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(spring_rabbitmq_listener_seconds_count{application=\"$application\"}[1m])) * 60",
-          "legendFormat": "Jobs Processados (RPM)",
+          "expr": "sum by (event_type) (rate(notification_messages_processed_total{status=\"success\"}[1m])) * 60",
+          "legendFormat": "{{event_type}} (Sucesso)",
           "range": true,
           "refId": "A"
         },
@@ -130,13 +126,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(spring_rabbitmq_listener_seconds_count{application=\"$application\", exception!=\"none\"}[1m])) * 60",
-          "legendFormat": "Falhas no Consumo",
+          "expr": "sum(rate(notification_messages_processed_total{status=~\"dlq.*\"}[1m])) * 60",
+          "legendFormat": "Erros (DLQ)",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "Throughput (Jobs de Ingestão)",
+      "title": "Processamento de Mensagens (RPM)",
       "type": "timeseries"
     },
     {
@@ -158,22 +154,18 @@
                 "value": null
               },
               {
-                "color": "orange",
-                "value": 2
-              },
-              {
                 "color": "red",
-                "value": 5
+                "value": 1
               }
             ]
           },
-          "unit": "s"
+          "unit": "short"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 4,
         "x": 8,
         "y": 1
       },
@@ -202,13 +194,81 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(spring_rabbitmq_listener_seconds_bucket{application=\"$application\"}[5m])) by (le))",
-          "legendFormat": "Duração do Job (P95)",
+          "expr": "sum(increase(notification_emails_sent_total{status=\"success\"}[1h]))",
+          "legendFormat": "Emails Enviados",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Tempo de Processamento (Parse + IA + Persistência)",
+      "title": "Emails Enviados (Última 1h)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(notification_emails_sent_total{status=\"failed\"}[1h]))",
+          "legendFormat": "Falhas Envio",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Falhas de Envio (Última 1h)",
       "type": "stat"
     },
     {
@@ -273,7 +333,7 @@
         "x": 16,
         "y": 1
       },
-      "id": 4,
+      "id": 5,
       "options": {
         "legend": {
           "calcs": [],
@@ -293,13 +353,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(http_client_requests_seconds_bucket{application=\"$application\", uri!~\".*actuator.*\"}[5m])) by (le, uri))",
-          "legendFormat": "{{uri}}",
+          "expr": "histogram_quantile(0.95, sum(rate(notification_message_processing_seconds_bucket[5m])) by (le))",
+          "legendFormat": "Latência de Processamento (P95)",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Latência de Dependências (Feign Clients)",
+      "title": "Latência (Processamento + Envio)",
       "type": "timeseries"
     },
     {
@@ -312,209 +372,7 @@
       },
       "id": 6,
       "panels": [],
-      "title": "Indicadores de Negócio (Logs)",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 10
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "editorMode": "code",
-          "expr": "sum by (event_type) (count_over_time({container=~\"$container_loki\"} | json | event_type=~\"INGESTION_JOB.*\" [$__interval]))",
-          "legendFormat": "{{event_type}}",
-          "queryType": "range",
-          "refId": "A"
-        }
-      ],
-      "title": "Status dos Jobs (Sucesso vs Falha)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 10
-      },
-      "id": 8,
-      "options": {
-        "barRadius": 0,
-        "barWidth": 0.97,
-        "fullHighlight": false,
-        "groupWidth": 0.7,
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "orientation": "horizontal",
-        "showValue": "auto",
-        "stacking": "none",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "editorMode": "code",
-          "expr": "sum by (event_type) (count_over_time({container=~\"$container_loki\"} | json | event_type=~\"OFX_PARSED|AI_CATEGORIZATION_FINISHED\" [$__range]))",
-          "legendFormat": "{{event_type}}",
-          "queryType": "instant",
-          "refId": "A"
-        }
-      ],
-      "title": "Passos Concluídos (Parse vs IA)",
-      "type": "barchart"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 18
-      },
-      "id": 10,
-      "panels": [],
-      "title": "Logs de Execução (Filtrável por Job ID)",
+      "title": "Logs Detalhados - Fonte: Loki",
       "type": "row"
     },
     {
@@ -548,10 +406,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
+        "h": 7,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 10
       },
       "id": 7,
       "options": {
@@ -582,20 +440,20 @@
             "uid": "${DS_LOKI}"
           },
           "editorMode": "code",
-          "expr": "{container=~\"$container_loki\"} | json | job_id=~\"$job_id\"",
+          "expr": "{container=~\"$container\"} | json | log_level!=\"INFO\"",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Logs de Ingestão",
+      "title": "Logs de Alerta (WARN/ERROR)",
       "type": "logs"
     }
   ],
-  "refresh": "10s",
+  "refresh": "5s",
   "schemaVersion": 39,
   "tags": [
     "poupeai",
-    "ingestion"
+    "notification"
   ],
   "templating": {
     "list": [
@@ -637,36 +495,9 @@
       },
       {
         "current": {
-          "selected": true,
-          "text": "poupeai-ingestion-service",
-          "value": "poupeai-ingestion-service"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
-        },
-        "definition": "label_values(jvm_memory_used_bytes, application)",
-        "hide": 0,
-        "includeAll": false,
-        "label": "Application",
-        "multi": false,
-        "name": "application",
-        "options": [],
-        "query": {
-          "query": "label_values(jvm_memory_used_bytes, application)",
-          "refId": "StandardVariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
-      },
-      {
-        "current": {
           "selected": false,
-          "text": "ingestion-service-prod",
-          "value": "ingestion-service-prod"
+          "text": "notification-service-local",
+          "value": "notification-service-local"
         },
         "datasource": {
           "type": "loki",
@@ -675,43 +506,14 @@
         "definition": "label_values(container)",
         "hide": 0,
         "includeAll": false,
-        "label": "Container (Loki)",
+        "label": "Container",
         "multi": false,
-        "name": "container_loki",
+        "name": "container",
         "options": [],
         "query": {
           "label": "container",
           "refId": "LokiVariableQueryEditor-VariableQuery",
-          "stream": "{container=~\".*ingestion-service.*\"}",
-          "type": 1
-        },
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
-      },
-      {
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "loki",
-          "uid": "${DS_LOKI}"
-        },
-        "definition": "",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Job ID (Filtro)",
-        "multi": false,
-        "name": "job_id",
-        "options": [],
-        "query": {
-          "label": "job_id",
-          "refId": "LokiVariableQueryEditor-VariableQuery",
-          "stream": "{container=~\".*ingestion-service.*\"} | json",
+          "stream": "{container=~\".*notification-service.*\"}",
           "type": 1
         },
         "refresh": 1,
@@ -723,13 +525,13 @@
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Poupe.AI - Ingestion Service",
-  "uid": "poupeai-ingestion-v1",
+  "title": "Poupe.AI - Notification Service",
+  "uid": "poupeai-notif-v1",
   "version": 1,
   "weekStart": ""
 }

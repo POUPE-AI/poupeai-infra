@@ -164,7 +164,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: ${MINIO_BUCKET}
       KEYCLOAK_SERVER_URL: ${KEYCLOAK_SERVER_URL}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_REALM: ${KEYCLOAK_POUPEAI_REALM}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${POUPE_AI_BACKEND_CLIENT_SECRET}
       KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN_USER}
@@ -182,7 +182,7 @@ services:
     image: franciscopaulinoq/poupeai-notification-service:${SERVICE_TAG}
     container_name: notification-service-prod
     environment:
-      DEBUG: 'True'
+      DEBUG: 'False'
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_HOST: rabbitmq
@@ -381,6 +381,7 @@ services:
     restart: unless-stopped
     networks:
       - poupe-ai-logging-network
+      - poupe-ai-network
 
   node-exporter:
     image: prom/node-exporter:v1.10.2

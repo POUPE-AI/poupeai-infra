@@ -1,57 +1,51 @@
 discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
-  
-  filter {
-    name   = "network"
-    values = ["poupe-ai-network", "poupe-ai-logging-network"]
-  }
-  
   refresh_interval = "5s"
 }
 
-discovery.relabel "docker_relabel" {
+discovery.relabel "poupe_ai_logs" {
   targets = discovery.docker.containers.targets
 
   rule {
-    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-    target_label  = "service_name"
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/?(.*core-service.*|.*notification-service.*|.*ingestion-service.*|.*reports-service.*)"
+    action        = "keep"
   }
 
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/(.*)"
+    regex         = "/?(.*)"
     target_label  = "container"
   }
 }
 
-
 loki.source.docker "containers" {
   host             = "unix:///var/run/docker.sock"
-  targets          = discovery.docker.containers.targets
-  forward_to       = [loki.process.docker_logs.receiver]
-  refresh_interval = "5s"
-  relabel_rules    = discovery.relabel.docker_relabel.rules
+  targets          = discovery.relabel.poupe_ai_logs.output
+  forward_to       = [loki.process.json_process.receiver]
 }
 
-loki.process "docker_logs" {
-  forward_to = [loki.write.loki_endpoint.receiver]
+loki.process "json_process" {
+  forward_to = [loki.write.local.receiver]
 
   stage.json {
     expressions = {
-      level      = "level",
-      event_type = "event_type",
+      level      = "log.level",
+      message    = "message",
+      trace_id   = "trace.correlation_id",
+      event_type = "event.type",
     }
   }
 
   stage.labels {
     values = {
-      level      = "",
-      event_type = "",
+      level = "level",
+      event_type = "event_type",
     }
   }
 }
 
-loki.write "loki_endpoint" {
+loki.write "local" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
   }

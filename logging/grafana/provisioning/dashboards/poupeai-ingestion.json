@@ -208,7 +208,7 @@
           "refId": "A"
         }
       ],
-      "title": "Tempo de Processamento (Parse + IA + Persistência)",
+      "title": "Tempo de Processamento (Listener)",
       "type": "stat"
     },
     {
@@ -293,8 +293,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(http_client_requests_seconds_bucket{application=\"$application\", uri!~\".*actuator.*\"}[5m])) by (le, uri))",
-          "legendFormat": "{{uri}}",
+          "expr": "histogram_quantile(0.95, sum(rate(http_client_requests_seconds_bucket{application=\"$application\"}[5m])) by (le, method, http_url))",
+          "legendFormat": "{{method}} ({{http_url}})",
           "range": true,
           "refId": "A"
         }
@@ -730,6 +730,6 @@
   "timezone": "browser",
   "title": "Poupe.AI - Ingestion Service",
   "uid": "poupeai-ingestion-v1",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
